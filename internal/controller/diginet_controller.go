@@ -18,11 +18,18 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	networkv1 "github.com/saeed-mcu/network-operator/api/v1"
 )
@@ -47,11 +54,40 @@ type DigiNetReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
 func (r *DigiNetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	logger := log.FromContext(ctx)
 
-	return ctrl.Result{}, nil
+	digiNet := &networkv1.DigiNet{}
+	err := r.Get(ctx, req.NamespacedName, digiNet)
+	if err != nil && errors.IsNotFound(err) {
+		return ctrl.Result{}, nil
+	} else if err != nil {
+
+		meta.SetStatusCondition(&digiNet.Status.Conditions, metav1.Condition{
+			Type:               "OperatorDegraded",
+			Status:             metav1.ConditionTrue,
+			Reason:             networkv1.ReasonDeploymentNotAvailable,
+			LastTransitionTime: metav1.NewTime(time.Now()),
+			Message:            fmt.Sprintf("unable to get operator custom resource: %s", err.Error()),
+		})
+
+		return ctrl.Result{}, utilerrors.NewAggregate([]error{err, r.Status().Update(ctx, netConfig)})
+	}
+
+	digiNet.Status.Applied = "False"
+	r.Status().Update(ctx, digiNet)
+
+	meta.SetStatusCondition(&digiNet.Status.Conditions, metav1.Condition{
+		Type:               "OperatorDegraded",
+		Status:             metav1.ConditionTrue,
+		Reason:             networkv1.ReasonSucceeded,
+		LastTransitionTime: metav1.NewTime(time.Now()),
+		Message:            "Operator successfully reconciling",
+	})
+
+	digiNet.Status.Applied = "True"
+	logger.Info("DigiNet Done")
+	return ctrl.Result{}, utilerrors.NewAggregate([]error{err, r.Status().Update(ctx, digiNet)})
 }
 
 // SetupWithManager sets up the controller with the Manager.

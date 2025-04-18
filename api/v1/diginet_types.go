@@ -20,6 +20,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	NoError    = "Done Successfully"
+	Processing = "Processing"
+	NotMatch   = "No matching nodes"
+)
+
+const (
+	ReasonCRNotAvailable          = "OperatorResourceNotAvailable"
+	ReasonDeploymentNotAvailable  = "OperandDeploymentNotAvailable"
+	ReasonOperandDeploymentFailed = "OperandDeploymentFailed"
+	ReasonSucceeded               = "OperatorSucceeded"
+)
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -28,18 +41,21 @@ type DigiNetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of DigiNet. Edit diginet_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	ClusterName string `json:"clusternamClusterNamee,omitempty"`
 }
 
 // DigiNetStatus defines the observed state of DigiNet
 type DigiNetStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Conditions is the list of status condition updates
+	Conditions []metav1.Condition `json:"conditions"`
+
+	Applied string `json:"applied,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Applied",type=string,JSONPath=`.status.applied`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // DigiNet is the Schema for the diginets API
 type DigiNet struct {
