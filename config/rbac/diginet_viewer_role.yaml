@@ -1,32 +1,23 @@
----
+# permissions for end users to view diginets.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: manager-role
+  labels:
+    app.kubernetes.io/name: network-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: diginet-viewer-role
 rules:
 - apiGroups:
   - network.digicloud.ir
   resources:
   - diginets
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
-- apiGroups:
-  - network.digicloud.ir
-  resources:
-  - diginets/finalizers
-  verbs:
-  - update
 - apiGroups:
   - network.digicloud.ir
   resources:
   - diginets/status
   verbs:
   - get
-  - patch
-  - update
