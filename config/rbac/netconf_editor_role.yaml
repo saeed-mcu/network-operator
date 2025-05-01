@@ -1,8 +1,11 @@
----
+# permissions for end users to edit netconfs.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: manager-role
+  labels:
+    app.kubernetes.io/name: network-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: netconf-editor-role
 rules:
 - apiGroups:
   - network.digicloud.ir
@@ -19,14 +22,6 @@ rules:
 - apiGroups:
   - network.digicloud.ir
   resources:
-  - netconfs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - network.digicloud.ir
-  resources:
   - netconfs/status
   verbs:
   - get
-  - patch
-  - update
