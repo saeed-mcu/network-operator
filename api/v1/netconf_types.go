@@ -25,17 +25,21 @@ import (
 
 // NetConfSpec defines the desired state of NetConf
 type NetConfSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// NodeSelector is a selector which must be true for the policy to be applied to the node.
+	// Selector which must match a node's labels for the policy to be scheduled on that node.
+	NodeName string `json:"nodeName,omitempty"`
 
-	// Foo is an example field of NetConf. Edit netconf_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// The desired configuration of the policy
+	NetConf string `json:"netConf,omitempty"`
 }
 
 // NetConfStatus defines the observed state of NetConf
 type NetConfStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Conditions is the list of status condition updates
+	Conditions []metav1.Condition `json:"conditions"`
+
+	Applied string `json:"applied,omitempty"`
+	State   string `json:"state,omitempty"`
 }
 
 // +kubebuilder:object:root=true
