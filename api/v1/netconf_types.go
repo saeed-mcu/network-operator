@@ -56,6 +56,9 @@ type NetConfStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Applied",type=string,JSONPath=`.status.applied`
+// +kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.state`
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // NetConf is the Schema for the netconfs API
 type NetConf struct {
