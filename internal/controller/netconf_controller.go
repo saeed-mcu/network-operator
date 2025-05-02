@@ -41,12 +41,12 @@ import (
 const (
 	finalizerName = "ae.digicloud/netplan"
 
-	defaultGwProbeTimeout = 120 * time.Second
-	apiServerProbeTimeout = 120 * time.Second
+	defaultGwProbeTimeout = 60 * time.Second
+	apiServerProbeTimeout = 60 * time.Second
 	// DesiredStateConfigurationTimeout doubles the default gw ping probe and API server
 	// connectivity check timeout to ensure the Checkpoint is alive before rolling it back
 	// https://nmstate.github.io/cli_guide#manual-transaction-control
-	DesiredStateConfigurationTimeout = (defaultGwProbeTimeout + apiServerProbeTimeout) * 2
+	DesiredStateConfigurationTimeout = (defaultGwProbeTimeout + apiServerProbeTimeout)
 )
 
 // NetConfReconciler reconciles a NetConf object
@@ -95,7 +95,7 @@ func (r *NetConfReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// --- Handle Deletion ---
 	if !instance.ObjectMeta.DeletionTimestamp.IsZero() {
-		// Resource is being deleted
+		logger.Info("Resource is being deleted")
 		if controllerutil.ContainsFinalizer(instance, finalizerName) {
 			if err := r.cleanupResource(ctx, instance); err != nil {
 				return ctrl.Result{}, err
@@ -112,7 +112,7 @@ func (r *NetConfReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	desiredState := shared.NewState(instance.Spec.NetConf)
-	nmstateOutput, err := ApplyDesiredState(r.APIClient, desiredState)
+	nmstateOutput, err := ApplyDesiredState(ctx, r.APIClient, desiredState)
 
 	if err != nil {
 		logger.Info("nmstate", "output", nmstateOutput)
@@ -170,11 +170,15 @@ func (r *NetConfReconciler) cleanupResource(ctx context.Context, instance *netwo
 	return nil
 }
 
-func ApplyDesiredState(cli client.Client, desiredState shared.State) (string, error) {
+func ApplyDesiredState(ctx context.Context, cli client.Client, desiredState shared.State) (string, error) {
+
+	logger := log.FromContext(ctx)
 
 	if string(desiredState.Raw) == "" {
 		return "Ignoring empty desired state", nil
 	}
+
+	logger.Info("ApplyDesiredState", "desiredState", string(desiredState.Raw))
 
 	// Before apply we get the probes that are working fine, they should be
 	// working fine after apply
@@ -186,8 +190,10 @@ func ApplyDesiredState(cli client.Client, desiredState shared.State) (string, er
 
 	setOutput, err := nmstatectl.Set(desiredState, DesiredStateConfigurationTimeout)
 	if err != nil {
+		logger.Info("nmstatectl.Set", "setOutput", setOutput, "err", err.Error())
 		return setOutput, err
 	}
+	logger.Info("nmstatectl.Set DONE")
 
 	//err = probe.Run(cli, probes)
 	//if err != nil {
@@ -197,8 +203,10 @@ func ApplyDesiredState(cli client.Client, desiredState shared.State) (string, er
 	commitOutput, err := nmstatectl.Commit()
 	if err != nil {
 		// We cannot rollback if commit fails, just return the error
+		logger.Info("nmstatectl.Commit", "commitOutput", commitOutput, "err", err.Error())
 		return commitOutput, err
 	}
+	logger.Info("nmstatectl.Commit Done")
 
 	commandOutput := fmt.Sprintf("setOutput: %s \n", setOutput)
 	return commandOutput, nil
