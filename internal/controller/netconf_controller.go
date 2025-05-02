@@ -163,7 +163,7 @@ func (r *NetConfReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *NetConfReconciler) cleanupResource(ctx context.Context, instance *networkv1.NetplanConfig) error {
+func (r *NetConfReconciler) cleanupResource(ctx context.Context, instance *networkv1.NetConf) error {
 
 	logger := log.FromContext(ctx)
 	logger.Info("Cleanup Done")
