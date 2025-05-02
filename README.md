@@ -16,3 +16,9 @@ Chnage the code and logic for reconciler and type:
 make generate
 make manifest
 ```
+
+### Vendoring mode for build
+```
+export GOPROXY=https://repo.hami.digicloud.ir/repository/go-proxy/,direct
+go mod vendor
+```

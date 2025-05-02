@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.22 AS builder
+FROM artifactory.digikala.com/docker/golang:1.22 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -9,12 +9,15 @@ COPY go.mod go.mod
 COPY go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN go mod download
+#RUN go mod download
+COPY vendor/ ./vendor/
+ENV GOFLAGS="-mod=vendor"
 
 # Copy the go source
 COPY cmd/main.go cmd/main.go
 COPY api/ api/
 COPY internal/controller/ internal/controller/
+COPY pkg/ pkg/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
@@ -25,9 +28,10 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+#FROM gcr.io/distroless/static:nonroot
+FROM reg.stage.ae.digicloud.ir/operator/rocky-nmstate:9
 WORKDIR /
 COPY --from=builder /workspace/manager .
-USER 65532:65532
+#USER 65532:65532
 
 ENTRYPOINT ["/manager"]
